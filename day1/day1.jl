@@ -40,3 +40,13 @@ print(get_fuel_recursive(14) == 2)  # expecting 2
 print(get_fuel_recursive(1969) == 966)
 
 print(get_fuel_recursive(100756) == 50346)
+
+output2_recursive = sum(get_fuel_while.(input_arr))
+
+# benchmarking while loop vs recursive solution
+
+using BenchmarkTools
+
+@benchmark sum(get_fuel_recursive.(input_arr))
+
+@benchmark sum(get_fuel_while.(input_arr))
