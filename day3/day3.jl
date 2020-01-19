@@ -122,6 +122,55 @@ function getManhattanDistance(cross_index, origin_index)
            abs(cross_index[2] - origin_index[2])
 end
 
+
+function getWireCrossSteps(board,wireInstructions)
+    # get cross coordinates
+    crossCoordinates = findall(i -> i == "x", board)
+
+    # set up dictionary with coordinates as keys and initiate as inf
+    Coor2Steps = Dict([([coor[1],coor[2]],Inf) for coor in crossCoordinates])
+
+    # walk through instructions counting the steps
+    numSteps = 0
+    originCoor = findfirst(i -> i == "o",board)
+    thisCoor = [originCoor[1],originCoor[2]]
+    for instruction in wireInstructions
+        change_mag = parse(Int, instruction[2:end])
+        letter = instruction[1]
+        axis = 2
+        direction_vector = 1
+        if letter in ('U', 'D')
+            axis = 1
+        end
+        if letter in ('L', 'U')
+            direction_vector = -1
+        end
+        for i = 1:change_mag
+            thisCoor[axis] += direction_vector
+            numSteps += 1
+            new_value = board[thisCoor[1], thisCoor[2]]
+            # if the step location is a cross, update the dictionary to min(current value, step)
+            if new_value == "x"
+                Coor2Steps[copy(thisCoor)] = min(Coor2Steps[thisCoor],numSteps)
+            end
+        end
+    end
+
+    # return dictionary completely updated
+    return Coor2Steps
+end
+
+function getMinSteps(board,wire1Instructions,wire2Instructions)::Int
+    # get wire1 dictionary key: cross coordinates, values: min steps to cross
+    wire1CrossSteps = getWireCrossSteps(board,wire1Instructions)
+
+    # repeat for wire2
+    wire2CrossSteps = getWireCrossSteps(board,wire2Instructions)
+
+    # addup values per key and choose minimum sum
+    return minimum([wire1CrossSteps[i] + wire2CrossSteps[i] for i in keys(wire1CrossSteps)])
+end
+
 #test
 getWireBoundaries(["R1"]) == (0, 1, 0, 0)
 getBoardBoundaries((-1, 1, 0, 0), (0, 1, -1, 1)) == (-1, 1, -1, 1)
@@ -136,9 +185,12 @@ traceWire(initiateBoard((-1, 1, -1, 1)),  ["R1", "L1", "D1", "U1"])
 traceWire(initiateBoard((-2, 2, -2, 2)),  ["R2"])
 traceWire(initiateBoard((-2, 2, -2, 2)),  ["U2"])
 traceWire(initiateBoard((-2, 2, -2, 2)),  ["L2"])
-traceWire(initiateBoard((-2, 2, -2, 2)),  ["D2"])
-traceWire(initiateBoard((-2, 2, -2, 2)),  ["R2", "D2", "L2", "U2"])
 
+testWire1 = traceWire(initiateBoard((-2, 2, -2, 2)),  ["D2"])
+testWire2 = traceWire(testWire1,  ["R2", "D2", "L2", "U2"],"2")
+testWire1Steps = getWireCrossSteps(testWire2,["D2"])
+testWire2Steps = getWireCrossSteps(testWire2,["R2", "D2", "L2", "U2"])
+testMinSteps = getMinSteps(testWire2,["D2"],["R2", "D2", "L2", "U2"])
 # apply
 wire1Boundaries = getWireBoundaries(wire1)
 
@@ -155,3 +207,7 @@ trace1 = traceWire(cleanBoard, wire1)
 trace2 = traceWire(trace1, wire2, "2")
 
 minCrossD = getMinCrossD(trace2)
+
+# part 2
+
+minSteps = getMinSteps(trace2,wire1,wire2)
