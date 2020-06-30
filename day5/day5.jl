@@ -51,7 +51,8 @@ end
 
 function applyInputCode(testCode, opIndex, input)
     # start assuming paramCode = [1,1,1] all immediate mode
-    inputIndex = testCode[opIndex+2] + 1
+    firstVal =  testCode[opIndex+2]
+    inputIndex = firstVal + 1
     testCode[inputIndex] = input
 end
 
@@ -63,6 +64,90 @@ function applyOutputCode(testCode, paramCode, opIndex)
         outputVal = testCode[outputVal+1]
     end
     return outputVal
+end
+
+function applyJumpIfTrueCode(testCode,paramCode, opIndex)
+    # start assuming paramCode = [1,1,1] all immediate mode
+    nextOpIndex = opIndex
+    firstVal = testCode[opIndex + 2]
+    if paramCode[1] == 0
+        firstVal = testCode[firstVal + 1]
+    end
+    secondVal =testCode[opIndex + 3]
+    if paramCode[2] == 0
+        secondVal = testCode[secondVal + 1]
+    end
+    if firstVal != 0
+        nextOpIndex = secondVal
+    else
+        nextOpIndex += 3
+    end
+    return nextOpIndex
+end
+
+function applyJumpIfFalseCode(testCode,paramCode, opIndex)
+    # start assuming paramCode = [1,1,1] all immediate mode
+    nextOpIndex = opIndex
+    firstVal = testCode[opIndex + 2]
+    if paramCode[1] == 0
+        firstVal = testCode[firstVal + 1]
+    end
+    secondVal =testCode[opIndex + 3]
+    if paramCode[2] == 0
+        secondVal = testCode[secondVal + 1]
+    end
+    if firstVal == 0
+        nextOpIndex = secondVal
+    else
+        nextOpIndex += 3
+    end
+    return nextOpIndex
+end
+
+function applyLessThanCode(testCode, paramCode, opIndex)
+    # start assuming paramCode = [1,1,1] all immediate mode
+    firstVal = testCode[opIndex+2]
+    if paramCode[1] == 0
+        firstVal = testCode[firstVal + 1]
+    end
+    secondVal = testCode[opIndex+3]
+    if paramCode[2] == 0
+        secondVal = testCode[secondVal + 1]
+    end
+    outputVal = 0
+    if firstVal < secondVal
+        # firstVal is actually position mode
+        outputVal = 1
+    end
+    thirdVal = testCode[opIndex+4]
+    # if paramCode[3] == 0
+    #     thirdVal = testCode[thirdVal + 1]
+    # end
+    outputIndex = thirdVal + 1
+    testCode[outputIndex] = outputVal
+end
+
+function applyEqualsCode(testCode, paramCode, opIndex)
+    # start assuming paramCode = [1,1,1] all immediate mode
+    firstVal = testCode[opIndex+2]
+    if paramCode[1] == 0
+        firstVal = testCode[firstVal + 1]
+    end
+    secondVal = testCode[opIndex+3]
+    if paramCode[2] == 0
+        secondVal = testCode[secondVal + 1]
+    end
+    outputVal = 0
+    if firstVal == secondVal
+        # firstVal is actually position mode
+        outputVal = 1
+    end
+    thirdVal = testCode[opIndex+4]
+    # if paramCode[3] == 0
+    #     thirdVal = testCode[thirdVal + 1]
+    # end
+    outputIndex = thirdVal + 1
+    testCode[outputIndex] = outputVal
 end
 
 function intcode(code::Array{Int,2}, input::Int)::Array{Int,1}
@@ -89,9 +174,22 @@ function intcode(code::Array{Int,2}, input::Int)::Array{Int,1}
             newOutput = applyOutputCode(testCode, paramCode, opIndex)
             append!(outputVector, newOutput)
             opIndex += 2
+        elseif opCode == 5
+            # jump-if-true
+            opIndex = applyJumpIfTrueCode(testCode, paramCode, opIndex)
+        elseif opCode == 6
+            # jump-if-false
+            opIndex = applyJumpIfFalseCode(testCode, paramCode, opIndex)
+        elseif opCode == 7
+            # less than
+            applyLessThanCode(testCode, paramCode, opIndex)
+            opIndex += 4
+        elseif opCode == 8
+            # equals
+            applyEqualsCode(testCode, paramCode, opIndex)
+            opIndex += 4
         else
-            # error
-            print("error")
+            throw(DomainError(opcode, "opCode not valid"))
         end
 
         # update paramCode and opCode for next iteration
@@ -100,33 +198,16 @@ function intcode(code::Array{Int,2}, input::Int)::Array{Int,1}
     return outputVector
 end
 
-input_arr = readdlm("day5\\input.txt", ',', Int)
+function partOne()
+    # part one
+    input_arr = readdlm("day5\\input.txt", ',', Int)
+    myOuputCode = intcode(input_arr, 1)
+    myOuputCode[end]
+end
 
-# test addition
-myCode = [1001, 4, 3, 4, 33]
-
-testParam, testOp = parseOp(myCode, 0)
-
-myCodeWadd = copy(myCode)
-
-myIndex = 0
-applyAddCode(myCodeWadd, testParam, myIndex)
-
-# test multiplication
-myCodeWmult = copy(myCode)
-
-myIndex = 0
-applyMultCode(myCodeWmult, testParam, myIndex)
-
-# test input
-myCodeWinput = copy(myCode)
-myInput = 101
-applyInputCode(myCodeWinput, myIndex, myInput)
-
-# test output
-myCodeWoutput = copy(myCode)
-applyOutputCode(myCodeWoutput, testParam, myIndex)
-
-myOuputCode = intcode(input_arr, 1)
-
-myOuputCode[end]
+function partTwo()
+    # part two
+    input_arr = readdlm("day5\\input.txt", ',', Int)
+    myOuputCode2 = intcode(input_arr, 5)
+    myOuputCode2[end]
+end
